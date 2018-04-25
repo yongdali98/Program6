@@ -3,11 +3,12 @@
   yxl161830@utdallas.edu
   CS3377.502
 */
+
 #include "program6.h"
 
 using namespace std;
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
   WINDOW    *window;
   CDKSCREEN *cdkscreen;
@@ -43,9 +44,42 @@ int main(int argc, char** argv)
   /* Display the Matrix */
   drawCDKMatrix(myMatrix, true);
 
+  char temp[100];
+  BinaryFileHeader *myHeader = new BinaryFileHeader();
+  ifstream binaryInfile ("cs3377.bin", ios::in | ios:: binary);
+
+  /* If file is not open, print error and exit*/
+  if(!binaryInfile.is_open())
+    {
+      cout << "ERROR, Cannot open the file!" << endl;
+      exit(1);
+    }
+
+  /* Read the binary file and setup the matrix*/
+  binaryInfile.read((char*) myHeader, sizeof(BinaryFileHeader));
+  sprintf(temp, "Magic: %s", convertIntToHex(myHeader->magicNumber));
+  setCDKMatrixCell(myMatrix, 1, 1, temp);
+  sprintf(temp, "Version: %u", (unsigned int)myHeader->versionNumber);
+  setCDKMatrixCell(myMatrix, 1, 2, temp);
+  sprintf(temp, "Version: %u", (unsigned int)myHeader->numRecords);
+  setCDKMatrixCell(myMatrix, 1, 3, temp);
+
+  BinaryFileRecord *myRecord = new BinaryFileRecord();
+
+  /* Read the binary file and setup the matrix*/
+  for(unsigned int i = 0; i < myHeader->numRecords && i < 4; i++)
+    {
+      binaryInfile.read((char *) myRecord, sizeof(BinaryFileRecord));
+      sprintf(temp, "strlen: %u", (unsigned int)myRecord->strLength);
+      setCDKMatrixCell(myMatrix, i + 2, 1, temp);
+      setCDKMatrixCell(myMatrix, i + 2, 2, myRecord->stringBuffer);
+    }
+
   /* Dipslay a message */
-  setCDKMatrixCell(myMatrix, 2, 2, "Hello World!!");
   drawCDKMatrix(myMatrix, true);    /* required  */
+
+  /* close ifstream*/
+  binaryInfile.close();
 
   /* So we can see results, pause until a key is pressed. */
   unsigned char x;
@@ -53,4 +87,6 @@ int main(int argc, char** argv)
 
   /* Cleanup screen */
   endCDK();
+
+  return 0;
 }
